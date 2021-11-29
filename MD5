@@ -1,0 +1,17 @@
+989dd626166e313ca5ba7f2c9c64c287 *DESCRIPTION
+1d7ec9fe1fd1f818a3b4c0d760541546 *LICENSE
+491ad109ff0b898f83882233f87e1048 *NAMESPACE
+632ac8a607cbbd3a6d40e04af26b6cff *NEWS.md
+167c760296b46ee51859cadb2d07c7ba *R/data.r
+6fa79497c4a7720c6a3ccb13cc13ac08 *R/rankdifferencetest-package.r
+443a94770918bcf39420c6f56acafff9 *R/rdt.r
+0a47c5cbd9ae870718106bf20686c8c0 *R/utils.r
+dd3e75cb564a7a8d49f7274f07d5f93f *README.md
+ca9695dbba4c6fb526cc3b0ba01263b7 *build/partial.rdb
+cf6991077bd13c2ff1c511f678c5ac22 *data/kornbrot_table1.rdata
+4f81fd65fb5dc344b003ac0643c7eeda *inst/REFERENCES.bib
+860e6931b6baf76d2bce77f9cbab290e *man/kornbrot_table1.Rd
+6115eea234caf1ce665dd59337c3d8d2 *man/rankdifferencetest-package.Rd
+f40d9a77cfe80296e6190a984197855e *man/rdt.Rd
+1284dac4f3243f0b3be75f78572480a1 *tests/test-all.R
+47d6975c550cc3cba979d93d053d906d *tests/testit/test-rdt.r
