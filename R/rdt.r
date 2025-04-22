@@ -92,8 +92,7 @@
 #' If `return = "data.frame"`, a data.frame with columns `p.value`, `z.statistic`,
 #' `formula`, `alternative`, and `method`.
 #'
-#' If `return = "coin"`, an object inheriting from class
-#' \code{"\linkS4class{IndependenceTest}"}.
+#' If `return = "coin"`, an object inheriting from class \link[coin]{IndependenceTest}.
 #'
 #' @importFrom coin wilcoxsign_test pvalue
 #' @importFrom stats as.formula

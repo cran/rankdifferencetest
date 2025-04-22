@@ -6,12 +6,12 @@
 \alias{rankdifferencetest-package}
 \title{rankdifferencetest: Kornbrot's Rank Difference Test}
 \description{
-Implements Kornbrot's rank difference test as described in <doi:10.1111/j.2044-8317.1990.tb00939.x>. This method is a modified Wilcoxon signed-rank test which produces consistent and meaningful results for ordinal or monotonically-transformed data.
+Implements Kornbrot's rank difference test as described in \doi{10.1111/j.2044-8317.1990.tb00939.x}. This method is a modified Wilcoxon signed-rank test which produces consistent and meaningful results for ordinal or monotonically-transformed data.
 }
 \seealso{
 Useful links:
 \itemize{
-  \item \url{http://brettklamer.com/work/rankdifferencetest}
+  \item \url{https://brettklamer.com/work/rankdifferencetest}
 }
 
 }

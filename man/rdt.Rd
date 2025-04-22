@@ -52,8 +52,7 @@ or the exact distribution \code{"exact"}.}
 If \code{return = "data.frame"}, a data.frame with columns \code{p.value}, \code{z.statistic},
 \code{formula}, \code{alternative}, and \code{method}.
 
-If \code{return = "coin"}, an object inheriting from class
-\code{"\linkS4class{IndependenceTest}"}.
+If \code{return = "coin"}, an object inheriting from class \link[coin]{IndependenceTest}.
 }
 \description{
 Performs Kornbrot's rank difference test. It's a modified Wilcoxon signed-rank
