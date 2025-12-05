@@ -1,38 +1,70 @@
-# Extract data based on the model formula.
-#' @importFrom modeltools ModelEnvFormula has
-#' @importFrom stats na.omit
-model2data <- function(formula, data) {
-  # ModelEnvFormula returns the possibly transformed data and includes the
-  # transformation in the variable name.
-  md <- ModelEnvFormula(
-    formula = formula,
-    data = data,
-    na.action = na.omit,
-    designMatrix = FALSE,
-    responseMatrix = FALSE
-  )
-
-  if(has(md, "input")) {
-    x <- md@get("input")
-  } else {
-    stop("Check the formula used in rdt(). It's missing the right hand side!")
+#' Walsh averages
+#'
+#' Calculates the set of Walsh (all pairwise) averages.
+#' Missing values are silently excluded.
+#'
+#' The set of Walsh (all pairwise) averages is defined as
+#'
+#' \deqn{
+#' w_{ij} = \frac{x_i + x_j}{2}, \quad \text{for } 1 \leq i \leq j \leq n.
+#' }
+#'
+#' with length \eqn{\frac{n(n+1)}{2}}.
+#'
+#' The Hodges-Lehman pseudomedian is computed as the median of the Walsh averages.
+#'
+#' @param x
+#' (numeric)\cr
+#' The numeric vector used to calculate the Walsh averages.
+#' Missing values are silently excluded.
+#'
+#' @param sort
+#' (Scalar logical: `FALSE`)\cr
+#' Whether or not the vector of walsh averages should be sorted.
+#'
+#' @returns
+#' numeric
+#'
+#' @examples
+#' #----------------------------------------------------------------------------
+#' # walsh() example
+#' #----------------------------------------------------------------------------
+#'
+#' walsh(1:3)
+#' walsh(c(1:3, NA))
+#'
+#' fmedian(walsh(1:3))
+#'
+#' @noRd
+walsh <- function(x, sort = FALSE) {
+  #-----------------------------------------------------------------------------
+  # Check arguments
+  #-----------------------------------------------------------------------------
+  if (!is.numeric(x)) {
+    stop("Argument 'x' must be a numeric vector.")
+  }
+  if (!is.logical(sort) || length(sort) != 1L) {
+    stop("Argument 'sort' must be a scalar logical.")
   }
 
-  if(has(md, "response")) {
-    y <- md@get("response")
-  } else {
-    stop("Check the formula used in rdt(). It's missing the left hand side!")
+  #-----------------------------------------------------------------------------
+  # Calculate walsh averages
+  #-----------------------------------------------------------------------------
+  if (length(x) == 0L) {
+    return(NA_real_)
+  }
+  if (anyNA(x)) {
+    x <- x[!is.na(x)]
   }
 
-  if(has(md, "blocks")) {
-    block <- md@get("blocks")
-  } else {
-    block <- NULL
+  walsh <- fouter(x, x, `+`)
+  walsh <- walsh[lower.tri(walsh, diag = TRUE)] / 2
+  if (sort) {
+    walsh <- sort(walsh)
   }
 
-  list(
-    y = y,
-    x = x,
-    block = block
-  )
+  #-----------------------------------------------------------------------------
+  # Return
+  #-----------------------------------------------------------------------------
+  walsh
 }

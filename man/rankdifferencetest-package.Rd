@@ -12,6 +12,7 @@ Implements Kornbrot's rank difference test as described in \doi{10.1111/j.2044-8
 Useful links:
 \itemize{
   \item \url{https://brettklamer.com/work/rankdifferencetest}
+  \item \url{https://bitbucket.org/bklamer/rankdifferencetest}
 }
 
 }

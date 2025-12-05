@@ -2,115 +2,179 @@
 % Please edit documentation in R/rdt.r
 \name{rdt}
 \alias{rdt}
+\alias{rdt2}
 \title{Rank difference test}
 \usage{
 rdt(
   data,
   formula,
-  zero.method = c("Pratt", "Wilcoxon"),
-  distribution = c("asymptotic", "approximate", "exact"),
-  alternative = c("two.sided", "greater", "less"),
-  return = c("data.frame", "coin"),
-  ...
+  conf_level = 0,
+  conf_method = "inversion",
+  n_resamples = 1000L,
+  alternative = "two.sided",
+  mu = 0,
+  distribution = "auto",
+  correct = TRUE,
+  zero_method = "wilcoxon",
+  agg_fun = "error",
+  digits_rank = Inf,
+  tol_root = 1e-04
+)
+
+rdt2(
+  x,
+  y,
+  conf_level = 0,
+  conf_method = "inversion",
+  n_resamples = 1000L,
+  alternative = "two.sided",
+  mu = 0,
+  distribution = "auto",
+  correct = TRUE,
+  zero_method = "wilcoxon",
+  digits_rank = Inf,
+  tol_root = 1e-04
 )
 }
 \arguments{
-\item{data}{A data.frame}
+\item{data}{(data.frame)\cr
+The data frame of interest.}
 
-\item{formula}{A formula of either form:
+\item{formula}{(formula)\cr
+A formula of form:
 \describe{
-\item{y ~ x | block}{
-For use when \code{data} is in long format. \code{y} is the numeric outcome,
-\code{x} is the binary grouping factor, and \code{block} is the
-observation-level grouping factor. \code{x} and \code{block} must be factors.
+\item{y ~ group | block}{
+Use when \code{data} is in tall format.
+\code{y} is the numeric outcome, \code{group} is the binary grouping variable, and \code{block} is the subject/item-level variable indicating pairs of observations.
+\code{group} will be converted to a factor and the first level will be the reference value.
+For example, when \code{levels(data$group) <- c("pre", "post")}, the focal level is 'post', so differences are \code{post - pre}.
+Pairs with missing values are silently dropped.
+See \code{agg_fun} for handling duplicate cases of grouping/blocking combinations.
 }
 \item{y ~ x}{
-For use when \code{data} is in wide format. \code{y} is the first measurement
-and \code{x} is the second measurement on the same observation.
+Use when \code{data} is in wide format.
+\code{y} and \code{x} must be numeric vectors.
+Differences of ranks correspond with \code{data$y - data$x}.
+Pairs with missing values are silently dropped.
 }
-}
-The differences in ranks are calculated as \code{y - x} or, when \code{x} is a
-factor, the first factor level minus the second.}
+}}
 
-\item{zero.method}{A string for the method used to handle differences equal to
-zero: \code{"Pratt"} (default) or \code{"Wilcoxon"}.}
+\item{conf_level}{(Scalar numeric: \verb{[0, 1)})\cr
+The confidence level.
+Typically \code{0.95}.
+If \code{0} (default), no confidence interval is calculated.}
 
-\item{distribution}{A string for the method used to calculate the conditional
-null distribution of the test statistic: Asymptotic distribution
-\code{"asymptotic"} (default), Monte Carlo resampling \code{"approximate"},
-or the exact distribution \code{"exact"}.}
+\item{conf_method}{(Scalar character: \code{c("inversion", "percentile", "bca")})\cr
+The type of confidence interval.
+If \code{"inversion"} (default), the bounds are computed by inverting the hypothesis test.
+If \code{"percentile"}, the bounds are computed using a percentile bootstrap.
+If \code{"bca"}, the bounds are computed using a bias-corrected and accelerated (BCa) bootstrap.}
 
-\item{alternative}{A string for the alternative hypothesis: \code{"two.sided"}
-(default), \code{"greater"}, or \code{"less"}.}
+\item{n_resamples}{(Scalar integer: \code{1000L}; \verb{[10, Inf)})\cr
+The number of bootstrap resamples.
+Only used if \code{"percentile"} or \code{"bca"} confidence intervals are chosen.}
 
-\item{return}{A string for the return object: \code{"data.frame"} (default) or
-\code{"coin"}.}
+\item{alternative}{(Scalar character: \code{c("two.sided", "greater", "less")})\cr
+The alternative hypothesis.
+Must be one of \code{"two.sided"} (default), \code{"greater"}, or \code{"less"}.}
 
-\item{...}{Further arguments passed to \code{coin::\link[coin]{wilcoxsign_test}}.}
+\item{mu}{(Scalar numeric: \code{0}; \verb{(-Inf, Inf)})\cr
+Under the null hypothesis, differences of ranks are assumed to be symmetric around \code{mu}.}
+
+\item{distribution}{(Scalar character: \code{c("auto", "exact", "asymptotic")})\cr
+The method used to calculate the p-value.
+If \code{"auto"} (default), an appropriate method will automatically be chosen (\code{distribution = "exact"} when n < 50 or \code{distribution = "asymptotic"} otherwise).
+If \code{"exact"}, the exact Wilcoxon signed-rank distribution is used.
+If \code{"asymptotic"}, the asymptotic normal approximation is used.}
+
+\item{correct}{(Scalar logical: \code{c(TRUE, FALSE)})\cr
+Whether or not to apply a continuity correction to the Z-statistic for the asymptotic approximation of the p-value.}
+
+\item{zero_method}{(Scalar character: \code{c("wilcoxon", "pratt")})\cr
+The method used to handle differences of ranks equal to zero.
+If \code{"wilcoxon"} (default), zeros are removed prior to ranking (classic Wilcoxon convention).
+If \code{"pratt"}, zeros are retained for ranking but excluded from the signed-rank sum.}
+
+\item{agg_fun}{(Scalar character or function: \code{"error"})\cr
+Used for aggregating duplicate cases of grouping/blocking combinations when data is in tall format and \code{formula} has structure \code{y ~ group | block}.
+\code{"error"} (default) will return an error if duplicate grouping/blocking combinations are encountered.
+Select one of \code{"first"}, \code{"last"}, \code{"sum"}, \code{"mean"}, \code{"median"}, \code{"min"}, or \code{"max"} for built in aggregation handling (each applies \code{na.rm = TRUE}).
+Or define your own function.
+For example, \code{myfun <- function(x) {as.numeric(quantile(x, 0.75, na.rm = TRUE))}}.}
+
+\item{digits_rank}{(Scalar integer: \code{Inf}; \verb{(0, Inf]})\cr
+Controls ranking precision.
+If finite, ranks are computed from \link[base:Round]{base::signif}\verb{(abs(diffs), digits_rank)}.
+If \code{Inf} (default), ranks are computed from \code{abs(diffs)}.
+Smaller values may introduce ties (because they no longer depend on extremely small numeric differences) and thus change averaged ranks and tie counts.}
+
+\item{tol_root}{(Scalar numeric: \code{1e-4}; \verb{(0, Inf)})\cr
+For \link[stats:uniroot]{stats::uniroot}\code{(tol=tol_root)} calls when \code{conf_level > 0} and \code{distribution = "asymptotic"}.}
+
+\item{x}{(numeric)\cr
+Numeric vector of data.
+Differences of ranks correspond with \code{x - y}.
+Pairs with missing values are silently dropped.}
+
+\item{y}{(numeric)\cr
+Numeric vector of data.
+Differences of ranks correspond with \code{x - y}.
+Pairs with missing values are silently dropped.}
 }
 \value{
-If \code{return = "data.frame"}, a data.frame with columns \code{p.value}, \code{z.statistic},
-\code{formula}, \code{alternative}, and \code{method}.
-
-If \code{return = "coin"}, an object inheriting from class \link[coin]{IndependenceTest}.
+A list with the following elements:
+\tabular{llll}{
+Slot \tab Subslot \tab Name \tab Description \cr
+1 \tab \tab \code{p_value}       \tab p-value. \cr
+2 \tab \tab \code{statistic}     \tab Test statistic. \eqn{W^+} for the exact Wilcoxon signed-rank distribution. \eqn{Z} for the asymptotic normal approximation. \cr
+3 \tab \tab \code{pseudomedian}  \tab Measure of centrality. \cr
+4 \tab \tab \code{lower}         \tab Lower bound of confidence interval for the pseudomedian. \code{NULL} if no CI requested. \cr
+5 \tab \tab \code{upper}         \tab Upper bound of confidence interval for the pseudomedian. \code{NULL} if no CI requested. \cr
+6 \tab \tab \code{method}        \tab Test method. \cr
+7 \tab   \tab \code{info}        \tab Additional test information. \cr
+7 \tab 1 \tab \code{p_value_method} \tab Method used to calculate the p-value. \cr
+7 \tab 2 \tab \code{pseudomedian_method} \tab Method used to calculate the pseudomedian. \cr
+7 \tab 3 \tab \code{conf_method} \tab Method used to calculate the confidence interval. \cr
+7 \tab 4 \tab \code{conf_level_achieved} \tab Achieved confidence level. \cr
+7 \tab 5 \tab \code{n_sample}    \tab Number of observations in the original data. \cr
+7 \tab 6 \tab \code{n_analytic}  \tab Number of observations after removing missing values from the original data. \cr
+7 \tab 7 \tab \code{n_zeros}     \tab Number of zeros among differences of ranks in the analytic data set. \cr
+7 \tab 8 \tab \code{n_signed}    \tab Number of nonzero differences of ranks in the analytic data set. \cr
+7 \tab 9 \tab \code{n_ties}      \tab Number of tied ranks after ranking the absolute differences of ranks. \cr
+7 \tab 10 \tab \code{data_type}  \tab Data type. \cr
+7 \tab 11 \tab \code{focal_name} \tab Name of the focal variable (differences are focal - reference). \cr
+7 \tab 12 \tab \code{reference_name} \tab Name of the reference variable (differences are focal - reference). \cr
+8 \tab   \tab \code{call}       \tab A named list of the function's arguments (use \code{as.call()} to convert to a call; \code{call$distribution} may be updated from \code{"exact"} to \code{"asymptotic"}).
+}
 }
 \description{
-Performs Kornbrot's rank difference test. It's a modified Wilcoxon signed-rank
-test which produces consistent and meaningful results for ordinal or monotonically
-transformed data.
+Performs Kornbrot's rank difference test.
+The rank difference test is a modified Wilcoxon signed-rank test that produces consistent and meaningful results for ordinal or monotonically transformed data.
 }
 \details{
-For ordinal scale data, the Wilcoxon signed-rank test results in subtraction
-of those ordinal scale values. However, this subtraction is not meaningful on
-the ordinal scale. In addition, any monotone transformation of the data will
-result in different signed ranks, thus different p-values. However, ranking
-the original data allows for meaningful addition and subtraction of ranks and
-preserves ranks over monotonic transformation. Kornbrot described the rank
-difference test for this reason.
+For paired data, the Wilcoxon signed-rank test results in subtraction of the paired values.
+However, this subtraction is not meaningful for ordinal scale variables.
+In addition, any monotone transformation of the data will result in different signed ranks, thus different p-values.
+However, ranking the original data allows for meaningful addition and subtraction of ranks and preserves ranks over monotonic transformation.
+Kornbrot developed the rank difference test for these reasons.
 
-Kornbrot recommends that the rank difference procedure be used in preference
-to the Wilcoxon signed-rank test in all paired comparison designs where the data
-are not both of interval scale type and of known distribution type. The rank
-difference test preserves good power compared to Wilcoxon's signed-rank test,
-is more powerful than the sign test, and has the benefit of being a true
-distribution-free test.
-
-The procedure for Wilcoxon's signed-rank test is as follows:
-\enumerate{
-\item Calculate differences for each paired observation.
-\item Remove differences equal to zero.
-\item Order the absolute differences from smallest to largest.
-\item Assign ranks \eqn{1, \dots, n} with average rank for ties.
-\item Calculate W+ = sum of the ranks for positive differences. The sum of W+ and
-W- is \eqn{n(n+1)/2}, so either can be calculated from the other.
-\item Choose the smaller of W+ and W- as the test statistic W.
-\item Since the test statistic is the smaller of W+ and W-, the critical region
-is the left tail of the distribution. W is distributed approximately normal
-with mean \eqn{mu = (n(n+1))/4} and variance
-\eqn{sigma^2 = (Tn(n+1)(2n+1))/24}, where T is a correction for ties and
-\eqn{T = 1-(sum(t^3-t)/(N^3-N))}, summed over all ties, where t is the
-length of a tie. The continuity corrected mean \eqn{mu = ((n(n+1))/4)+0.5}.
-}
+Kornbrot recommends that the rank difference test be used in preference to the Wilcoxon signed-rank test in all paired comparison designs where the data are not both of interval scale and of known distribution.
+The rank difference test preserves good power compared to Wilcoxon's signed-rank test, is more powerful than the sign test, and has the benefit of being a true distribution-free test.
 
 The procedure for Kornbrot's rank difference test is as follows:
 \enumerate{
-\item Combine all 2n observations.
-\item Assign ranks \eqn{1, \dots, 2n} with average rank for ties.
+\item Combine all \eqn{2n} paired observations.
+\item Order the values from smallest to largest.
+\item Assign ranks \eqn{1, 2, \dots, 2n} with average rank for ties.
 \item Perform the Wilcoxon signed-rank test using the paired ranks.
 }
 
-The test statistic for the rank difference test (D) is not exactly equal to the
-test statistic (W) of the naive rank-transformed Wilcoxon signed-rank test
-(the latter being implemented in \code{rdt()}). Using W should result in a
-conservative estimate for D, and they approach in distribution as the sample
-size increases. \insertCite{kornbrot1990;textual}{rankdifferencetest}
-discusses methods for calculating D when n<7 and 8<n<=20.
+The test statistic for the rank difference test \eqn{(D)} is not exactly equal to the test statistic of the naive rank-transformed Wilcoxon signed-rank test \eqn{(W^+)}.
+However, using \eqn{W^+} should result in a conservative estimate for \eqn{D}, and they approach in distribution as the sample size increases.
+\insertCite{kornbrot1990;textual}{rankdifferencetest} discusses methods for calculating \eqn{D} when \eqn{n<7} and \eqn{8 < n \leq 20}.
+\code{\link[=rdt]{rdt()}} uses \eqn{W^+} instead of \eqn{D}.
 
-\code{zero.method = "Pratt"} uses the method by Pratt (1959), which first
-rank-transforms the absolute differences (including zeros) and then removes
-the ranks corresponding to zero-differences. \code{zero.method = "Wilcoxon"} uses
-the method by Wilcoxon (1950), which first removes the zero-differences and
-then rank-transforms the remaining absolute differences.
+See \code{\link[=srt]{srt()}} for additional details about implementation of Wilcoxon's signed-rank test.
 }
 \examples{
 #----------------------------------------------------------------------------
@@ -121,8 +185,8 @@ library(rankdifferencetest)
 # Use example data from Kornbrot (1990)
 data <- kornbrot_table1
 
-# Create long-format data for demonstration purposes
-data_long <- reshape(
+# Create tall-format data for demonstration purposes
+data_tall <- reshape(
   data = kornbrot_table1,
   direction = "long",
   varying = c("placebo", "drug"),
@@ -132,69 +196,78 @@ data_long <- reshape(
   timevar = "treatment",
   new.row.names = seq_len(prod(length(c("placebo", "drug")), nrow(kornbrot_table1)))
 )
-# Subject and treatment must be factors. The ordering of the treatment factor
-# will determine the difference (placebo - drug).
-data_long$subject <- factor(data_long$subject)
-data_long$treatment <- factor(data_long$treatment, levels = c("placebo", "drug"))
 
-# Recreate analysis and results from section 7.1 in Kornbrot (1990)
-## The p-value shown in Kornbrot (1990) was continuity corrected. rdt() does
-## not apply a continuity correction, so the p-value here will be slightly
-## lower. It does match the uncorrected p-value shown in footnote on page 246.
+# Subject and treatment should be factors. The ordering of the treatment factor
+# will determine the difference (placebo - drug).
+data_tall$subject <- factor(data_tall$subject)
+data_tall$treatment <- factor(data_tall$treatment, levels = c("drug", "placebo"))
+
+# Recreate analysis and results from table 3 (page 248) in Kornbrot (1990)
+## Divide p-value by 2 for one-tailed probability.
 rdt(
   data = data,
   formula = placebo ~ drug,
   alternative = "two.sided",
-  distribution = "asymptotic"
-)$p.value/2
-rdt(
-  data = data_long,
-  formula = time ~ treatment | subject,
-  alternative = "two.sided",
-  distribution = "asymptotic"
-)$p.value/2
+  distribution = "asymptotic",
+  zero_method = "wilcoxon",
+  correct = TRUE,
+  conf_level = 0.95
+)
 
-# The same outcome is seen after transforming time to rate.
-## The rate transformation inverts the rank ordering.
-data$placebo_rate <- 60 / data$placebo
-data$drug_rate <- 60 / data$drug
-data_long$rate <- 60 / data_long$time
-
-rdt(
-  data = data,
-  formula = placebo_rate ~ drug_rate,
-  alternative = "two.sided",
-  distribution = "asymptotic"
-)$p.value/2
-rdt(
-  data = data_long,
-  formula = rate ~ treatment | subject,
-  alternative = "two.sided",
-  distribution = "asymptotic"
-)$p.value/2
-
-# In contrast to the rank difference test, the Wilcoxon signed-rank test
-# produces differing results. See table 1 and table 2 in Kornbrot (1990).
-wilcox.test(
+rdt2(
   x = data$placebo,
   y = data$drug,
-  paired = TRUE,
-  exact = TRUE,
-  alternative = "two.sided"
-)$p.value/2
-wilcox.test(
-  x = data$placebo_rate,
-  y = data$drug_rate,
-  paired = TRUE,
-  exact = TRUE,
-  alternative = "two.sided"
-)$p.value/2
+  alternative = "two.sided",
+  distribution = "asymptotic",
+  zero_method = "wilcoxon",
+  correct = TRUE,
+  conf_level = 0.95
+)
+
+# The same outcome is seen after transforming time to rate.
+## Rate transformation inverts the rank ordering.
+data$placebo_rate <- 60 / data$placebo
+data$drug_rate <- 60 / data$drug
+data_tall$rate <- 60 / data_tall$time
+
+rdt(
+  data = data_tall,
+  formula = rate ~ treatment | subject,
+  alternative = "two.sided",
+  distribution = "asymptotic",
+  zero_method = "wilcoxon",
+  correct = TRUE,
+  conf_level = 0.95
+)
+
+# In contrast to the rank difference test, the Wilcoxon signed-rank test
+# produces differing results. See table 1 and table 2 (page 245) in
+# Kornbrot (1990).
+## Divide p-value by 2 for one-tailed probability.
+srt(
+  data = data,
+  formula = placebo ~ drug,
+  alternative = "two.sided",
+  distribution = "asymptotic",
+  zero_method = "wilcoxon",
+  correct = TRUE,
+  conf_level = 0.95
+)
+
+srt(
+  data = data_tall,
+  formula = rate ~ treatment | subject,
+  alternative = "two.sided",
+  distribution = "asymptotic",
+  zero_method = "wilcoxon",
+  correct = TRUE,
+  conf_level = 0.95
+)
 
 }
 \references{
 \insertRef{kornbrot1990}{rankdifferencetest}
-
-\insertRef{pratt1959}{rankdifferencetest}
-
-\insertRef{wilcoxon1950}{rankdifferencetest}
+}
+\seealso{
+\code{\link[=srt]{srt()}}
 }

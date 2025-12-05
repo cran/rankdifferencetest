@@ -1,6 +1,6 @@
 Package: rankdifferencetest
 Title: Kornbrot's Rank Difference Test
-Version: 2025.4.21
+Version: 2025.12.4
 Authors@R: person("Brett", "Klamer", 
                   email = "code@brettklamer.com", 
                   role = c("aut", "cre"),
@@ -9,18 +9,20 @@ Description: Implements Kornbrot's rank difference test as described in
     <doi:10.1111/j.2044-8317.1990.tb00939.x>. This method is a modified 
     Wilcoxon signed-rank test which produces consistent and meaningful 
     results for ordinal or monotonically-transformed data.
-URL: https://brettklamer.com/work/rankdifferencetest
-License: MIT + file LICENSE
+URL: https://brettklamer.com/work/rankdifferencetest,
+        https://bitbucket.org/bklamer/rankdifferencetest
+License: GPL-3
 LazyData: TRUE
-Depends: R (>= 3.6.0)
-Imports: Rdpack, coin, modeltools
-Suggests: testit, rmarkdown
+Depends: R (>= 4.3.0)
+Imports: Rdpack, stats, exactRankTests, Hmisc, boot, generics
+Suggests: tinytest, rmarkdown, tibble, coin
 RdMacros: Rdpack
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2025-04-22 03:24:35 UTC; x
-Author: Brett Klamer [aut, cre] (<https://orcid.org/0000-0002-8334-4831>)
+Packaged: 2025-12-05 04:36:40 UTC; x
+Author: Brett Klamer [aut, cre] (ORCID:
+    <https://orcid.org/0000-0002-8334-4831>)
 Maintainer: Brett Klamer <code@brettklamer.com>
 Repository: CRAN
-Date/Publication: 2025-04-22 04:10:02 UTC
+Date/Publication: 2025-12-05 04:50:02 UTC
